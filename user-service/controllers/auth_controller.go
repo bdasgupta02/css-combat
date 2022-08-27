@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"time"
+	"user-service/db/models"
 	"user-service/proto/auth"
 
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,8 +34,40 @@ func Register(ctx context.Context, db *pgx.Conn, req *auth.AuthRegister) (*auth.
 	return &auth.AuthToken{Token: jwt}, nil
 }
 
-func Login() {
+func Login(ctx context.Context, db *pgx.Conn, req *auth.AuthLogin) (*auth.AuthToken, error) {
+	var rows pgx.Rows
+	var err error
 
+	if req.GetType() == "username" {
+		rows, err = db.Query(ctx, `SELECT username, email, pass_hash, pass_salt FROM end_user WHERE username = $1`, req.GetIdentifier())
+		if err != nil {
+			return nil, err
+		}
+	} else if req.GetType() == "email" {
+		rows, err = db.Query(ctx, `SELECT username, email, pass_hash, pass_salt FROM end_user WHERE email = $1`, req.GetIdentifier())
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("invalid type")
+	}
+
+	var user models.EndUser
+	if err := pgxscan.ScanOne(&user, rows); err != nil {
+		return nil, err
+	}
+
+	hashCheck := checkPasswordHash(req.GetPassword()+user.PassSalt, user.PassHash)
+	if !hashCheck {
+		return nil, errors.New("invalid password")
+	}
+
+	jwt, err := createJWT(generateClaims(user.Username))
+	if err != nil {
+		return nil, err
+	}
+
+	return &auth.AuthToken{Token: jwt}, nil
 }
 
 // Password hashing (a bit slower because of bcrypt)

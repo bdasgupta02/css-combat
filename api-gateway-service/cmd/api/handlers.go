@@ -11,7 +11,7 @@ import (
 
 func (app *serverConfig) LoginViaGRPC(w http.ResponseWriter, r *http.Request) {
 	var cancel context.CancelFunc
-	authC.ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	authC.ctx, cancel = context.WithTimeout(context.Background(), 15 * time.Second)
 	defer cancel()
 
 	var loginObj auth.AuthLogin
@@ -35,7 +35,7 @@ func (app *serverConfig) LoginViaGRPC(w http.ResponseWriter, r *http.Request) {
 func (app *serverConfig) RegisterViaGRPC(w http.ResponseWriter, r *http.Request) {
 
 	var cancel context.CancelFunc
-	authC.ctx, cancel = context.WithTimeout(context.Background(), time.Second)
+	authC.ctx, cancel = context.WithTimeout(context.Background(), 15 * time.Second)
 	defer cancel()
 
 	var registerObj auth.AuthRegister

@@ -20,9 +20,7 @@ func (a *AuthServer) Register(ctx context.Context, req *auth.AuthRegister) (*aut
 
 func (a *AuthServer) Login(ctx context.Context, req *auth.AuthLogin) (*auth.AuthToken, error) {
 	logGRPC("Called Login", "")
-
-	res := auth.AuthToken{Token: "String here"}
-	return &res, nil
+	return controllers.Login(ctx, conf.DB, req)
 }
 
 func logGRPC(msg string, addOn string) {

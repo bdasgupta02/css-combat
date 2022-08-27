@@ -47,6 +47,7 @@ func CreateRouter() http.Handler {
 func PublicRoutes(router chi.Router) {
 	router.Post("/auth/login", conf.LoginViaGRPC)
 	router.Post("/auth/register", conf.RegisterViaGRPC)
+
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User Service is online"))
 	})
@@ -55,4 +56,8 @@ func PublicRoutes(router chi.Router) {
 func ProtectedRoutes(router chi.Router) {
 	router.Use(jwtauth.Verifier(tokenAuth))
 	router.Use(jwtauth.Authenticator)
+	
+	router.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("You're authorized!"))
+	})
 }
