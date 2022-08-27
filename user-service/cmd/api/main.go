@@ -30,6 +30,7 @@ func gRPCListen() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed to start gRPC server on API Gateway Service: %v", err)
 	}
+	defer listener.Close()
 }
 
 func main() {

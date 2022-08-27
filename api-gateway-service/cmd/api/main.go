@@ -1,24 +1,27 @@
 package main
 
 import (
+	"api-gateway-service/config"
 	"log"
 	"net/http"
-	"api-gateway-service/config"
 
 	"github.com/go-chi/jwtauth"
 )
 
-var TokenAuth *jwtauth.JWTAuth
-var serverConfig config.Config
+type serverConfig config.Config
+
+var tokenAuth *jwtauth.JWTAuth
+var conf serverConfig
 
 func init() {
-	serverConfig = config.LoadConfig()
-	TokenAuth = jwtauth.New("HS256", serverConfig.JwtKey, nil)
+	conf = serverConfig(config.LoadConfig())
+	tokenAuth = jwtauth.New("HS256", conf.JwtKey, nil)
 }
 
 func main() {
 	log.Println("Starting API Gateway Service")
 	router := CreateRouter()
+	defer userConn.Close()
 
-	log.Fatal(http.ListenAndServe(serverConfig.WebPort, router))
+	log.Fatal(http.ListenAndServe(conf.WebPort, router))
 }

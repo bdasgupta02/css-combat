@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"user-service/db/models"
 	"user-service/proto/auth"
 )
@@ -23,6 +24,12 @@ func (a *AuthServer) Register(ctx context.Context, req *auth.AuthRegister) (*aut
 }
 
 func (a *AuthServer) Login(ctx context.Context, req *auth.AuthLogin) (*auth.AuthToken, error) {
+	logGRPC("Called Login", "")
 
-	return nil, nil
+	res := auth.AuthToken{Token: "String here"}
+	return &res, nil
+}
+
+func logGRPC(msg string, addOn string) {
+	log.Printf("gRPC: %v %v", msg, addOn)
 }
