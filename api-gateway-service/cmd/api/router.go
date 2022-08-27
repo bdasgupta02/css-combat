@@ -38,19 +38,21 @@ func CreateRouter() http.Handler {
 	log.Println("gRPC connections successful")
 	router.Use(middleware.Logger)
 
-	router.Group(func(router chi.Router) {
-		router.Use(jwtauth.Verifier(tokenAuth))
-		router.Use(jwtauth.Authenticator)
-
-	})
-
-	router.Group(func(router chi.Router) {
-		router.Post("/auth/login", conf.LoginViaGRPC)
-		router.Post("/auth/register", conf.RegisterViaGRPC)
-		router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("User Service is online"))
-		})
-	})
+	router.Group(ProtectedRoutes)
+	router.Group(PublicRoutes)
 
 	return router
+}
+
+func PublicRoutes(router chi.Router) {
+	router.Post("/auth/login", conf.LoginViaGRPC)
+	router.Post("/auth/register", conf.RegisterViaGRPC)
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("User Service is online"))
+	})
+}
+
+func ProtectedRoutes(router chi.Router) {
+	router.Use(jwtauth.Verifier(tokenAuth))
+	router.Use(jwtauth.Authenticator)
 }

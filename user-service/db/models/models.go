@@ -1,21 +1,23 @@
 package models
 
-import "database/sql"
+import (
+	"github.com/jackc/pgx/v4"
+)
 
 type Models struct {
-	EndUser EndUser
-	CosmeticItem CosmeticItem
+	EndUser               EndUser
+	CosmeticItem          CosmeticItem
 	CosmeticInventoryItem CosmeticInventoryItem
 }
 
-var DB *sql.DB
+var db *pgx.Conn
 
-func New(dbPool *sql.DB) Models {
-	DB = dbPool
+func New(dbPool *pgx.Conn) Models {
+	db = dbPool
 
 	return Models{
-		EndUser: EndUser{},
-		CosmeticItem: CosmeticItem{},
+		EndUser:               EndUser{},
+		CosmeticItem:          CosmeticItem{},
 		CosmeticInventoryItem: CosmeticInventoryItem{},
 	}
 }

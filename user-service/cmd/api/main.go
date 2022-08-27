@@ -1,19 +1,71 @@
 package main
 
 import (
+	"context"
 	"log"
 	"math"
 	"net"
+	"time"
 	"user-service/config"
+	"user-service/db/models"
 	"user-service/proto/auth"
 
+	"github.com/jackc/pgx/v4"
 	"google.golang.org/grpc"
 )
 
 var conf config.Config
+var connCount uint32
 
-func init() {
-	conf = config.LoadConfig()
+func main() {
+	log.Println("Starting User Service")
+
+	conn := connectToDB()
+	if conn == nil {
+		log.Panic("Can't connect to pSQL")
+	}
+
+	conf = config.LoadConfig(conn, models.New(conn))
+
+	gRPCListen()
+}
+
+func openDB(dsn string) (*pgx.Conn, error) {
+	ctx := context.Background()
+	db, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(ctx); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// TODO shift to env
+func connectToDB() *pgx.Conn {
+	dsn := "postgres://admin:password@localhost:5432/user_service"
+	for {
+		connection, err := openDB(dsn)
+		if err != nil {
+			log.Printf("Failed connection attempt to pSQL: %v", err)
+			connCount++
+		} else {
+			log.Println("Successfully connected to pSQL database")
+			return connection
+		}
+
+		if connCount > 20 {
+			log.Println(err)
+			return nil
+		}
+
+		log.Println("Backing off for two seconds..")
+		time.Sleep(2 * time.Second)
+		continue
+	}
 }
 
 func gRPCListen() {
@@ -31,9 +83,4 @@ func gRPCListen() {
 		log.Fatalf("Failed to start gRPC server on API Gateway Service: %v", err)
 	}
 	defer listener.Close()
-}
-
-func main() {
-	log.Println("Starting User Service")
-	gRPCListen()
 }
