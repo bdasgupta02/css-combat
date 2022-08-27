@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "/auth";
+
+message AuthLogin{
+  string type = 1;
+  string identifier = 2;
+  string password = 3;
+}
+
+message AuthRegister{
+  string email = 1;
+  string username = 2;
+  string password = 3;
+  string fullName = 4;
+}
+
+message AuthToken{
+  string token = 1;
+}
+
+service AuthService {
+  rpc Register(AuthRegister) returns (AuthToken);
+  rpc Login(AuthLogin) returns (AuthToken);
+}

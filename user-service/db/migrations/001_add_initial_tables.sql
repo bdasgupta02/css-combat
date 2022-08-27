@@ -8,10 +8,10 @@ CREATE TABLE end_user (
   contact varchar,
   resume_link varchar,
   portfolio_link varchar,
-  is_blocked boolean,
+  is_blocked boolean default false,
   blocked_till timestamp,
   block_history jsonb,
-  is_deactivated boolean,
+  is_deactivated boolean default false,
   preferences jsonb
 );
 

@@ -1,39 +1,38 @@
 package main
 
 import (
-	"database/sql"
 	"log"
-	"net/http"
-	"user-service/db/models"
+	"math"
+	"net"
+	"user-service/config"
+	"user-service/proto/auth"
+
+	"google.golang.org/grpc"
 )
 
-const webPort = ":8002"
+var conf config.Config
 
-type Config struct {
-	DB     *sql.DB
-	Models models.Models
+func init() {
+	conf = config.LoadConfig()
+}
+
+func gRPCListen() {
+	log.Printf("Starting gRPC Server at %v", conf.WebPort)
+	listener, err := net.Listen("tcp", conf.WebPort)
+	if err != nil {
+		log.Fatalf("Failed to listen on API Gateway Service: %v", err)
+	}
+
+	grpcServer := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
+
+	auth.RegisterAuthServiceServer(grpcServer, &AuthServer{Models: conf.Models})
+
+	if err := grpcServer.Serve(listener); err != nil {
+		log.Fatalf("Failed to start gRPC server on API Gateway Service: %v", err)
+	}
 }
 
 func main() {
 	log.Println("Starting User Service")
-	router := CreateRouter()
-
-	log.Fatal(http.ListenAndServe(webPort, router))
+	gRPCListen()
 }
-
-/*
-// Migrating automatically upon starting up
-func migrate() {
-	log.Println("Migrating to database..")
-
-	exec.Command("cd", "..")
-	exec.Command("cd", "..")
-	exec.Command("cd", "db")
-	exec.Command("cd", "migrations")
-	cmd := exec.Command("tern", "migrate")
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-*/
