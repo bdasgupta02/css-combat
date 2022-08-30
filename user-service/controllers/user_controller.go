@@ -30,3 +30,8 @@ func GetUser(ctx context.Context, db *pgx.Conn, req *user.EmptyMessage) (*user.U
 
 	return userToResponse(endUser), nil
 }
+
+// should only return username, fullname, avatar 
+func GetMatchUsers(ctx context.Context, db *pgx.Conn, req *user.MatchUsersRequest) (*user.MatchUsersResponse, error) {
+	return nil, nil
+}

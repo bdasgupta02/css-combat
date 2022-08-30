@@ -36,7 +36,7 @@ func (a *UserServer) GetUser(ctx context.Context, req *user.EmptyMessage) (*user
 
 func (a *UserServer) GetMatchUsers(ctx context.Context, req *user.MatchUsersRequest) (*user.MatchUsersResponse, error) {
 	logGRPC("Called GetMatchUsers", "")
-	return nil, nil
+	return controllers.GetMatchUsers(ctx, conf.DB, req)
 }
 
 func (a *UserServer) EditUser(ctx context.Context, req *user.EditUserRequest) (*user.UserResponse, error) {
