@@ -1,7 +1,7 @@
 package models
 
 type CosmeticItem struct {
-	ID              uint              `json:"id"`
+	Id              uint              `json:"id"`
 	Type            string            `json:"type"`
 	Description     string            `json:"description"`
 	Price           int64             `json:"price"`

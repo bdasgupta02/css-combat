@@ -3,7 +3,7 @@ package models
 import "time"
 
 type CosmeticInventoryItem struct {
-	ID             uint      `json:"id"`
+	Id             uint      `json:"id"`
 	EndUserId      int       `json:"endUser"`
 	CosmeticItemId int       `json:"cosmeticItem"`
 	CurrencyUsed   int64     `json:"currencyUsed"`

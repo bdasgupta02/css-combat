@@ -21,7 +21,7 @@ message UserResponse {
 	string full_name = 4;     
 	string resume_link = 5;   
 	string portfolio_link = 6; 
-	string is_blocked = 7;     
+	bool is_blocked = 7;     
 	google.protobuf.Timestamp blocked_till = 8;
 	map<string, string> block_history = 9; 
 	bool is_deactivated = 10;

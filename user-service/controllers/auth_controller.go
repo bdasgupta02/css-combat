@@ -57,12 +57,12 @@ func Login(ctx context.Context, db *pgx.Conn, req *auth.AuthLogin) (*auth.AuthTo
 		return nil, err
 	}
 
-	hashCheck := checkPasswordHash(req.GetPassword()+user.PassSalt, user.PassHash)
+	hashCheck := checkPasswordHash(req.GetPassword()+*user.PassSalt, *user.PassHash)
 	if !hashCheck {
 		return nil, errors.New("invalid password")
 	}
 
-	jwt, err := createJWT(generateClaims(user.Username))
+	jwt, err := createJWT(generateClaims(*user.Username))
 	if err != nil {
 		return nil, err
 	}
