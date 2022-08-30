@@ -1,7 +1,7 @@
 ALTER TABLE
   end_user
 ADD
-  CONSTRAINT username_unqiue UNIQUE (username);
+  CONSTRAINT username_unique UNIQUE (username);
 
 ALTER TABLE
   end_user

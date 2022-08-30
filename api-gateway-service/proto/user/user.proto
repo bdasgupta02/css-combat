@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package user;
+
+option go_package = "/user";
+
+message IDRequest {
+  int64 id = 1; 
+}
+
+message CosmeticTypeRequest {
+  string type = 1;
+}
+
+message UserResponse {
+  uint64 id = 1;            
+	string email = 2;
+	string username = 3;
+	string full_name = 4;     
+	string resume_link = 5;   
+	string portfolio_link = 6; 
+	string is_blocked = 7;     
+	google.protobuf.Timestamp blocked_till = 8;
+	map<string, string> block_history = 9; 
+	bool is_deactivated = 10;
+	map<string, string> preferences = 11;
+  int64 currency = 12;
+
+  // to be added via cosmetic item equipped avatar
+  string avatar_img = 13;
+}
+
+message MatchUsersRequest {
+  int32 num = 1;
+  uint64 id_1 = 2;
+  uint64 id_2 = 3;
+  uint64 id_3 = 4;
+  uint64 id_4 = 5;
+}
+
+message MatchUsersResponse {
+  string avatar_1 = 1;
+  string avatar_2 = 2;
+  string avatar_3 = 3;
+  string avatar_4 = 4;
+}
+
+message EditUserRequest {
+  string email = 2;
+	string full_name = 3;     
+	string resume_link = 4;   
+	string portfolio_link = 5; 
+	string is_blocked = 6;     
+	google.protobuf.Timestamp blocked_till = 7;
+	map<string, string> block_history = 8; 
+	bool is_deactivated = 9;
+	map<string, string> preferences = 10;
+  int64 currency = 11;
+}
+
+message CosmeticsResponse {
+  repeated CosmeticResponse cosmetics = 1;
+}
+
+message CosmeticResponse {
+  string type = 1;
+  string description = 2;
+  int64 price = 3;
+  string avatar_img = 4;
+  string banner_img = 5;
+  string editor_color_type = 6;
+  map<string, string> editor_colors = 7;
+}
+
+message InventoryItemResponse {
+  // cosmetic
+  string type = 1;
+  string description = 2;
+  int64 price = 3;
+  string avatar_img = 4;
+  string banner_img = 5;
+  string editor_color_type = 6;
+  map<string, string> editor_colors = 7;
+
+  // other info
+  google.protobuf.Timestamp time_purchased = 8;
+  bool is_equipped = 9;
+  int64 currency_used = 10;
+}
+
+message InventoryItemsResponse {
+  repeated InventoryItemResponse items = 1;
+}
+
+message EmptyMessage {}
+
+service UserService {
+  // GetUser takes in an empty message as username should be taken via jwt metadata
+  rpc GetUser(EmptyMessage) returns (UserResponse);
+  rpc GetMatchUsers(MatchUsersRequest) returns (MatchUsersResponse);
+  rpc EditUser(EditUserRequest) returns (UserResponse);
+  rpc GetCosmetics(EmptyMessage) returns (CosmeticsResponse);
+  rpc GetCosmetic(IDRequest) returns (CosmeticResponse);
+  rpc GetCosmeticType(CosmeticTypeRequest) returns (CosmeticsResponse);
+  rpc PurchaseCosmetic(IDRequest) returns (IDRequest);
+  rpc GetInventory(EmptyMessage) returns (InventoryItemsResponse);
+  rpc GetInventoryItem(IDRequest) returns (InventoryItemResponse);
+  rpc EquipInventoryItem(IDRequest) returns (InventoryItemResponse);
+}

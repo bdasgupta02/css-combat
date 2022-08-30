@@ -2,6 +2,7 @@ package main
 
 import (
 	"api-gateway-service/proto/auth"
+	"api-gateway-service/proto/user"
 	"context"
 	"log"
 	"net/http"
@@ -18,8 +19,14 @@ type authClient struct {
 	ctx    context.Context
 }
 
+type userClient struct {
+	client user.UserServiceClient
+	ctx    context.Context
+}
+
 var userConn *grpc.ClientConn
 var authC authClient
+var userC userClient
 
 // TODO TLS credentials
 func CreateRouter() http.Handler {
@@ -32,8 +39,8 @@ func CreateRouter() http.Handler {
 		log.Fatalf("Could not open gRPC client from API Gateway to User Service: %v", err)
 	}
 
-	log.Println("Starting Auth client")
 	authC = authClient{client: auth.NewAuthServiceClient(userConn)}
+	userC = userClient{client: user.NewUserServiceClient(userConn)}
 
 	log.Println("gRPC connections successful")
 	router.Use(middleware.Logger)
@@ -56,7 +63,9 @@ func PublicRoutes(router chi.Router) {
 func ProtectedRoutes(router chi.Router) {
 	router.Use(jwtauth.Verifier(tokenAuth))
 	router.Use(jwtauth.Authenticator)
-	
+
+	router.Get("/user/get", conf.GetUser)
+
 	router.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("You're authorized!"))
 	})

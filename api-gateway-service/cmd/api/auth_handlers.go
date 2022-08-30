@@ -11,7 +11,7 @@ import (
 
 func (app *serverConfig) LoginViaGRPC(w http.ResponseWriter, r *http.Request) {
 	var cancel context.CancelFunc
-	authC.ctx, cancel = context.WithTimeout(context.Background(), 15 * time.Second)
+	authC.ctx, cancel = context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	var loginObj auth.AuthLogin
@@ -35,7 +35,7 @@ func (app *serverConfig) LoginViaGRPC(w http.ResponseWriter, r *http.Request) {
 func (app *serverConfig) RegisterViaGRPC(w http.ResponseWriter, r *http.Request) {
 
 	var cancel context.CancelFunc
-	authC.ctx, cancel = context.WithTimeout(context.Background(), 15 * time.Second)
+	authC.ctx, cancel = context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	var registerObj auth.AuthRegister
@@ -54,31 +54,4 @@ func (app *serverConfig) RegisterViaGRPC(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSONResponse(w, authResponse)
-}
-
-func writeJSONResponse(w http.ResponseWriter, jsonData any) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(jsonData)
-}
-
-func (app *serverConfig) errorJSON(w http.ResponseWriter, err error, status ...int) {
-	statusCode := http.StatusBadRequest
-
-	if len(status) > 0 {
-		statusCode = status[0]
-	}
-
-	var payload jsonResponse
-	payload.Error = true
-	payload.Message = err.Error()
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	writeJSONResponse(w, payload)
-}
-
-
-type jsonResponse struct {
-	Error   bool   `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
 }

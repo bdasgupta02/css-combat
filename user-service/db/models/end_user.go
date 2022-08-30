@@ -8,12 +8,13 @@ type EndUser struct {
 	Username      string            `json:"username"`
 	PassHash      string            `json:"-"`
 	PassSalt      string            `json:"-"`
-	FullName      string            `json:"full_name"`
-	ResumeLink    string            `json:"resume_link"`
-	PortfolioLink string            `json:"portfolio_link"`
-	IsBlocked     bool              `json:"is_blocked"`
-	BlockedTill   time.Time         `json:"blocked_till"`
-	BlockHistory  map[string]string `json:"block_history"`
-	IsDeactivated bool              `json:"is_deactivated"`
+	FullName      string            `json:"fullName"`
+	ResumeLink    string            `json:"resumeLink"`
+	PortfolioLink string            `json:"portfolioLink"`
+	IsBlocked     bool              `json:"isBlocked"`
+	BlockedTill   time.Time         `json:"blockedTill"`
+	BlockHistory  map[string]string `json:"blockHistory"`
+	IsDeactivated bool              `json:"isDeactivated"`
 	Preferences   map[string]string `json:"preferences"`
+	Currency      int64             `json:"currency"`
 }

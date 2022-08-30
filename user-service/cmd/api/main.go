@@ -7,8 +7,8 @@ import (
 	"net"
 	"time"
 	"user-service/config"
-	"user-service/db/models"
 	"user-service/proto/auth"
+	"user-service/proto/user"
 
 	"github.com/jackc/pgx/v4"
 	"google.golang.org/grpc"
@@ -25,7 +25,7 @@ func main() {
 		log.Panic("Can't connect to pSQL")
 	}
 
-	conf = config.LoadConfig(conn, models.New(conn))
+	conf = config.LoadConfig(conn)
 
 	gRPCListen()
 }
@@ -46,7 +46,7 @@ func openDB(dsn string) (*pgx.Conn, error) {
 
 // TODO shift to env
 func connectToDB() *pgx.Conn {
-	dsn := "postgres://admin:password@localhost:5432/user_service"
+	dsn := "postgres://admin:password@localhost:5432/user_db"
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {
@@ -77,7 +77,8 @@ func gRPCListen() {
 
 	grpcServer := grpc.NewServer(grpc.MaxConcurrentStreams(math.MaxUint32))
 
-	auth.RegisterAuthServiceServer(grpcServer, &AuthServer{Models: conf.Models})
+	auth.RegisterAuthServiceServer(grpcServer, &AuthServer{})
+	user.RegisterUserServiceServer(grpcServer, &UserServer{})
 
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatalf("Failed to start gRPC server on API Gateway Service: %v", err)
