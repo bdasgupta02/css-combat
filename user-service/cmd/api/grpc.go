@@ -34,7 +34,7 @@ func (a *UserServer) GetUser(ctx context.Context, req *user.EmptyMessage) (*user
 	return controllers.GetUser(ctx, conf.DB, req)
 }
 
-func (a *UserServer) GetMatchUsers(ctx context.Context, req *user.MatchUsersRequest) (*user.MatchUsersResponse, error) {
+func (a *UserServer) GetMatchUsers(ctx context.Context, req *user.MatchUsersRequest) (*user.MultipleUserResponse, error) {
 	logGRPC("Called GetMatchUsers", "")
 	return controllers.GetMatchUsers(ctx, conf.DB, req)
 }

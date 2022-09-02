@@ -24,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	// GetUser takes in an empty message as username should be taken via jwt metadata
 	GetUser(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*UserResponse, error)
-	GetMatchUsers(ctx context.Context, in *MatchUsersRequest, opts ...grpc.CallOption) (*MatchUsersResponse, error)
+	GetMatchUsers(ctx context.Context, in *MatchUsersRequest, opts ...grpc.CallOption) (*MultipleUserResponse, error)
 	EditUser(ctx context.Context, in *EditUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	GetCosmetics(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*CosmeticsResponse, error)
 	GetCosmetic(ctx context.Context, in *IDRequest, opts ...grpc.CallOption) (*CosmeticResponse, error)
@@ -52,8 +52,8 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *EmptyMessage, opts 
 	return out, nil
 }
 
-func (c *userServiceClient) GetMatchUsers(ctx context.Context, in *MatchUsersRequest, opts ...grpc.CallOption) (*MatchUsersResponse, error) {
-	out := new(MatchUsersResponse)
+func (c *userServiceClient) GetMatchUsers(ctx context.Context, in *MatchUsersRequest, opts ...grpc.CallOption) (*MultipleUserResponse, error) {
+	out := new(MultipleUserResponse)
 	err := c.cc.Invoke(ctx, "/user.UserService/GetMatchUsers", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (c *userServiceClient) EquipInventoryItem(ctx context.Context, in *IDReques
 type UserServiceServer interface {
 	// GetUser takes in an empty message as username should be taken via jwt metadata
 	GetUser(context.Context, *EmptyMessage) (*UserResponse, error)
-	GetMatchUsers(context.Context, *MatchUsersRequest) (*MatchUsersResponse, error)
+	GetMatchUsers(context.Context, *MatchUsersRequest) (*MultipleUserResponse, error)
 	EditUser(context.Context, *EditUserRequest) (*UserResponse, error)
 	GetCosmetics(context.Context, *EmptyMessage) (*CosmeticsResponse, error)
 	GetCosmetic(context.Context, *IDRequest) (*CosmeticResponse, error)
@@ -158,7 +158,7 @@ type UnimplementedUserServiceServer struct {
 func (UnimplementedUserServiceServer) GetUser(context.Context, *EmptyMessage) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedUserServiceServer) GetMatchUsers(context.Context, *MatchUsersRequest) (*MatchUsersResponse, error) {
+func (UnimplementedUserServiceServer) GetMatchUsers(context.Context, *MatchUsersRequest) (*MultipleUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMatchUsers not implemented")
 }
 func (UnimplementedUserServiceServer) EditUser(context.Context, *EditUserRequest) (*UserResponse, error) {

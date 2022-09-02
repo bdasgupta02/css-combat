@@ -29,7 +29,7 @@ CREATE TABLE user_mmr (
 
 CREATE TABLE match (
   id serial primary key,
-  game_state varchar,
+  game_state integer,
   game_type varchar,
   target_img varchar,
   match_time timestamp,

@@ -40,11 +40,8 @@ message MatchUsersRequest {
   uint64 id_4 = 5;
 }
 
-message MatchUsersResponse {
-  string avatar_1 = 1;
-  string avatar_2 = 2;
-  string avatar_3 = 3;
-  string avatar_4 = 4;
+message MultipleUserResponse {
+  repeated UserResponse users = 1;
 }
 
 message EditUserRequest {
@@ -99,7 +96,7 @@ message EmptyMessage {}
 service UserService {
   // GetUser takes in an empty message as username should be taken via jwt metadata
   rpc GetUser(EmptyMessage) returns (UserResponse);
-  rpc GetMatchUsers(MatchUsersRequest) returns (MatchUsersResponse);
+  rpc GetMatchUsers(MatchUsersRequest) returns (MultipleUserResponse);
   rpc EditUser(EditUserRequest) returns (UserResponse);
   rpc GetCosmetics(EmptyMessage) returns (CosmeticsResponse);
   rpc GetCosmetic(IDRequest) returns (CosmeticResponse);
