@@ -49,7 +49,7 @@ func GetMatchUsers(ctx context.Context, db *pgx.Conn, req *user.MatchUsersReques
 		return nil, errors.New("number of users should be from 2 to 4")
 	}
 
-	
+	if rows == nil {}
 	// get matcher values, if not in body or null, return null
 
 	if err != nil {

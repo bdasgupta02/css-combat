@@ -27,6 +27,10 @@ func main() {
 	log.Println("Starting Game Service")
 	router := chi.NewRouter()
 
+	q := newMatchQueue()
+	m := newMatchHub(q)
+	go m.run()
+
 	router.Use(middleware.Logger)
 
 	// authenticates socket connection with JWT
@@ -34,6 +38,13 @@ func main() {
 		router.Use(jwtauth.Verifier(tokenAuth))
 		router.Use(jwtauth.Authenticator)
 	
+		router.HandleFunc("/ws/match", func(w http.ResponseWriter, r *http.Request) {
+			serveMatchWs(m, w, r)
+		})
+
+		router.HandleFunc("/ws/game/:id", func(w http.ResponseWriter, r *http.Request) {
+			// TODO
+		})
 	
 		router.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("You're authorized!"))

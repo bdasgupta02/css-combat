@@ -14,7 +14,7 @@ type claims struct {
 }
 
 // TODO refresh token (to be done in API gateway layer)
-func generateClaims(username string) *claims {
+func generateClaims(username string, userid uint64) *claims {
 	expirationTime := time.Now().Add(60 * 24 * time.Hour)
 	return &claims{
 		Username: username,

@@ -26,7 +26,17 @@ func Register(ctx context.Context, db *pgx.Conn, req *auth.AuthRegister) (*auth.
 		return nil, err
 	}
 
-	jwt, err := createJWT(generateClaims(req.GetUsername()))
+	rows, err := db.Query(ctx, `SELECT id FROM end_user WHERE username = $1`, req.GetUsername())
+	if err != nil {
+		return nil, err
+	}
+
+	var user models.EndUser
+	if err := pgxscan.ScanOne(&user, rows); err != nil {
+		return nil, err
+	}
+
+	jwt, err := createJWT(generateClaims(req.GetUsername(), *user.Id))
 	if err != nil {
 		return nil, err
 	}
@@ -39,12 +49,12 @@ func Login(ctx context.Context, db *pgx.Conn, req *auth.AuthLogin) (*auth.AuthTo
 	var err error
 
 	if req.GetType() == "username" {
-		rows, err = db.Query(ctx, `SELECT username, email, pass_hash, pass_salt FROM end_user WHERE username = $1`, req.GetIdentifier())
+		rows, err = db.Query(ctx, `SELECT id, username, email, pass_hash, pass_salt FROM end_user WHERE username = $1`, req.GetIdentifier())
 		if err != nil {
 			return nil, err
 		}
 	} else if req.GetType() == "email" {
-		rows, err = db.Query(ctx, `SELECT username, email, pass_hash, pass_salt FROM end_user WHERE email = $1`, req.GetIdentifier())
+		rows, err = db.Query(ctx, `SELECT id, username, email, pass_hash, pass_salt FROM end_user WHERE email = $1`, req.GetIdentifier())
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +72,7 @@ func Login(ctx context.Context, db *pgx.Conn, req *auth.AuthLogin) (*auth.AuthTo
 		return nil, errors.New("invalid password")
 	}
 
-	jwt, err := createJWT(generateClaims(*user.Username))
+	jwt, err := createJWT(generateClaims(*user.Username, *user.Id))
 	if err != nil {
 		return nil, err
 	}
