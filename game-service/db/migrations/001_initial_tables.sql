@@ -24,7 +24,11 @@ CREATE TABLE user_mmr (
   id serial primary key,
   end_user_id integer not null,
   player_rank_id integer references player_rank,
-  mmr decimal not null
+  mmr decimal not null,
+  deviation decimal not null,
+  volatility decimal not null,
+  num_games integer,
+  game_history varchar[]
 );
 
 CREATE TABLE match (

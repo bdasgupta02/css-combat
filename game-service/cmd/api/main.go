@@ -37,15 +37,15 @@ func main() {
 	router.Group(func(router chi.Router) {
 		router.Use(jwtauth.Verifier(tokenAuth))
 		router.Use(jwtauth.Authenticator)
-	
+
 		router.HandleFunc("/ws/match", func(w http.ResponseWriter, r *http.Request) {
-			serveMatchWs(m, w, r)
+			serveMatchWS(m, w, r)
 		})
 
 		router.HandleFunc("/ws/game/:id", func(w http.ResponseWriter, r *http.Request) {
 			// TODO
 		})
-	
+
 		router.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("You're authorized!"))
 		})

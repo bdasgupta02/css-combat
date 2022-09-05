@@ -14,9 +14,9 @@ import (
 
 const (
 	timedOut = "timed out"
-	start = "start"
-	stop = "stop"
-	found = "found"
+	start    = "start"
+	stop     = "stop"
+	found    = "found"
 )
 
 var (
@@ -37,7 +37,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func serveMatchWs(hub *matchHub, w http.ResponseWriter, r *http.Request) {
+func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 	_, claims, _ := jwtauth.FromContext(r.Context())
 	username := claims["username"].(string)
 
@@ -63,16 +63,16 @@ func serveMatchWs(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 
 func (c *matchClient) timeoutChecker() {
 	time.Sleep(4 * time.Minute)
+	defer func() {
+		c.hub.unregister <- c
+		c.conn.Close()
+	}()
 
 	w, err := c.conn.NextWriter(websocket.TextMessage)
-	if err != nil {
-		return
+	if err == nil {
+		w.Write([]byte(timedOut))
+		w.Close()
 	}
-
-	w.Write([]byte(timedOut))
-	w.Close()
-	c.hub.unregister <- c
-	c.conn.Close()
 }
 
 // "start" and "stop" to start or stop matchmaking
