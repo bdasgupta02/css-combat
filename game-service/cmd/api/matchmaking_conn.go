@@ -24,6 +24,7 @@ var (
 	space   = []byte{' '}
 )
 
+// FIXME: IMPORTANT: should not send "start" message
 // FIXME: ONLY TESTING make this authoratiative through sql query for low and high
 // FIXME: use algorithm to find the bracket for mmr
 // FIXME: high and low cant be below 0 in logic

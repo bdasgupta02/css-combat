@@ -22,7 +22,7 @@ func main() {
 
 	conn := connectToDB()
 	if conn == nil {
-		log.Panic("Can't connect to pSQL")
+		log.Panic("Can't connect to pSQL DB")
 	}
 
 	conf = config.LoadConfig(conn)

@@ -1,22 +1,31 @@
 package main
 
 import (
+	"context"
 	"game-service/config"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth"
+	"github.com/jackc/pgx/v4"
 )
 
 type serverConfig config.Config
 
 var tokenAuth *jwtauth.JWTAuth
 var conf serverConfig
+var connCount uint32
 
 func init() {
-	conf = serverConfig(config.LoadConfig())
+	conn := connectToDB()
+	if conn == nil {
+		log.Panic("Can't connect to pSQL DB")
+	}
+
+	conf = serverConfig(config.LoadConfig(conn))
 	tokenAuth = jwtauth.New("HS256", conf.JwtKey, nil)
 }
 
@@ -52,4 +61,42 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(conf.WebPort, router))
+}
+
+func openDB(dsn string) (*pgx.Conn, error) {
+	ctx := context.Background()
+	db, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(ctx); err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+// TODO shift to env
+func connectToDB() *pgx.Conn {
+	dsn := "postgres://admin:password@localhost:5432/user_db"
+	for {
+		connection, err := openDB(dsn)
+		if err != nil {
+			log.Printf("Failed connection attempt to pSQL: %v", err)
+			connCount++
+		} else {
+			log.Println("Successfully connected to pSQL database")
+			return connection
+		}
+
+		if connCount > 20 {
+			log.Println(err)
+			return nil
+		}
+
+		log.Println("Backing off for two seconds..")
+		time.Sleep(2 * time.Second)
+		continue
+	}
 }
