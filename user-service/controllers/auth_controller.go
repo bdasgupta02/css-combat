@@ -13,11 +13,37 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func isExistingUser(ctx context.Context, db *pgx.Conn, username string, email string) bool {
+	rows, err := db.Query(ctx, `SELECT id FROM end_user WHERE username = $1 OR email = $2`, username, email)
+	if err != nil {
+		return false
+	}
+
+	var userChecker models.EndUser
+	if err := pgxscan.ScanOne(&userChecker, rows); err != nil {
+		return false
+	} else if userChecker.Id != nil {
+		return true
+	}
+
+	return false
+}
+
+// TODO: Check without field checking
+
 func Register(ctx context.Context, db *pgx.Conn, req *auth.AuthRegister) (*auth.AuthToken, error) {
+	if req.Username == "" || req.Email == "" || req.FullName == "" || req.Password == "" {
+		return nil, errors.New("missing details")
+	}
+
 	salt := randomizedString(6)
 	hashed, err := hashPassword(req.GetPassword() + salt)
 	if err != nil {
 		return nil, err
+	}
+
+	if isExistingUser(ctx, db, req.GetUsername(), req.GetPassword()) {
+		return nil, errors.New("duplicate user username or email")
 	}
 
 	stmt := `INSERT INTO end_user (email, username, pass_hash, pass_salt, full_name) VALUES ($1, $2, $3, $4, $5)`
@@ -45,6 +71,10 @@ func Register(ctx context.Context, db *pgx.Conn, req *auth.AuthRegister) (*auth.
 }
 
 func Login(ctx context.Context, db *pgx.Conn, req *auth.AuthLogin) (*auth.AuthToken, error) {
+	if req.Type == "" || req.Identifier == "" || req.Password == "" {
+		return nil, errors.New("missing details")
+	}
+
 	var rows pgx.Rows
 	var err error
 

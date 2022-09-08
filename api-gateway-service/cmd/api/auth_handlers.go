@@ -55,3 +55,4 @@ func (app *serverConfig) RegisterViaGRPC(w http.ResponseWriter, r *http.Request)
 
 	writeJSONResponse(w, authResponse)
 }
+

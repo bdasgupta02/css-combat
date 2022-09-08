@@ -31,7 +31,7 @@ func GetUser(ctx context.Context, db *pgx.Conn, req *user.EmptyMessage) (*user.U
 	return userToResponse(endUser), nil
 }
 
-// should only return username, fullname, avatar 
+// should only return username, fullname, avatar
 // min 2 max 4
 func GetMatchUsers(ctx context.Context, db *pgx.Conn, req *user.MatchUsersRequest) (*user.MultipleUserResponse, error) {
 
@@ -49,7 +49,8 @@ func GetMatchUsers(ctx context.Context, db *pgx.Conn, req *user.MatchUsersReques
 		return nil, errors.New("number of users should be from 2 to 4")
 	}
 
-	if rows == nil {}
+	if rows == nil {
+	}
 	// get matcher values, if not in body or null, return null
 
 	if err != nil {

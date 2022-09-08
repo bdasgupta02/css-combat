@@ -10,14 +10,16 @@ var jwtKey = []byte("RPFwhPSTpd2fp1PeGftiAM810EYTYn8AvZrVefiBzlMjp8LZxekK88xkcEi
 
 type claims struct {
 	Username string `json:"username"`
+	UserId   uint64 `json:"userId"`
 	jwt.RegisteredClaims
 }
 
 // TODO refresh token (to be done in API gateway layer)
-func generateClaims(username string, userid uint64) *claims {
+func generateClaims(username string, userId uint64) *claims {
 	expirationTime := time.Now().Add(60 * 24 * time.Hour)
 	return &claims{
 		Username: username,
+		UserId:   userId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
