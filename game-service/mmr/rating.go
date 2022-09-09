@@ -4,6 +4,21 @@ import (
 	"fmt"
 )
 
+type Rating struct {
+	Rating     float64
+	Deviation  float64
+	Volatility float64
+	TwoSigma   float64
+}
+
+func DefaultRating() *Rating {
+	return &Rating{DefaultRat, DefaultDev, DefaultVol, 2 * DefaultDev}
+}
+
+func NewRating(r, rd, s float64) *Rating {
+	return &Rating{r, rd, s, 2 * rd}
+}
+
 func (r *Rating) ToGlicko2() *Rating {
 	return NewRating(
 		(r.Rating-DefaultRat)/glicko2Scale,
@@ -34,19 +49,6 @@ func (r *Rating) Copy() *Rating {
 		r.Rating,
 		r.Deviation,
 		r.Volatility,
+		2 * r.Deviation,
 	}
-}
-
-func DefaultRating() *Rating {
-	return &Rating{DefaultRat, DefaultDev, DefaultVol}
-}
-
-func NewRating(r, rd, s float64) *Rating {
-	return &Rating{r, rd, s}
-}
-
-type Rating struct {
-	Rating     float64
-	Deviation  float64
-	Volatility float64
 }

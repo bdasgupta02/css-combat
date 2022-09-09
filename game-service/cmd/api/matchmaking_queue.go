@@ -8,8 +8,8 @@ import (
 
 type matchQueueItem struct {
 	client *matchClient
-	low    int
-	high   int
+	low    float64
+	high   float64
 }
 
 type matchQueue struct {
@@ -57,7 +57,6 @@ func isMatch(a *matchQueueItem, b *matchQueueItem) bool {
 	return (a.low >= b.low && a.low <= b.high) || (a.high >= b.low && a.high <= b.low)
 }
 
-// finding 2-4 people
 func (q *matchQueue) findMatch(user *matchQueueItem) []*matchQueueItem {
 	var res []*matchQueueItem
 	var count int

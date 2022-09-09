@@ -1,14 +1,21 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"context"
+	"game-service/controllers"
+	"log"
 
-// between the websocket connection and the hub.
+	"github.com/gorilla/websocket"
+)
+
 type matchClient struct {
-	hub      *matchHub
-	conn     *websocket.Conn
-	username string
-	send     chan []byte
-	update   chan int
+	hub        *matchHub
+	conn       *websocket.Conn
+	username   string
+	userId     uint64
+	send       chan []byte
+	update     chan int
+	quitSearch chan bool
 }
 
 type matchHub struct {
@@ -29,14 +36,26 @@ func newMatchHub(q *matchQueue) *matchHub {
 	}
 }
 
-func (h *matchHub) run() {
+func (h *matchHub) run(ctx context.Context) {
 	for {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
-			h.queue.addToQ(&matchQueueItem{client: client, low: -1, high: -1})
+			r, err := controllers.GetOrCreateMMR(ctx, conf.DB, &client.userId)
+			if err != nil {
+				log.Printf("Error connecting user with id %v: %v", client.userId, err)
+				h.unregister <- client
+			} else {
+				log.Printf("User with id %v started matchmaking with low: %v, high: %v", client.userId, r.Rating-r.TwoSigma, r.Rating+r.TwoSigma)
+				h.queue.addToQ(&matchQueueItem{
+					client: client,
+					low:    r.Rating - r.TwoSigma,
+					high:   r.Rating + r.TwoSigma,
+				})
+			}
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				client.quitSearch <- true
 				delete(h.clients, client)
 				close(client.send)
 			}

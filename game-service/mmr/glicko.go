@@ -26,6 +26,33 @@ const (
 	Draw Result = 0.5
 )
 
+// Important: players array must be sorted in order of game rank
+// Assumes there cannot be ties (if people have same accuracy, whoever came earlier must win)
+func CalculateMatchMMRs(ratings []*Rating) ([]*Rating, error) {
+  var err error
+  for i, p := range(ratings) {
+    res := genRatings(len(ratings), i)
+    o := append(ratings[:i], ratings[i+1:]...)
+    ratings[i], err = CalculateRating(p, o, res)
+    if err != nil {
+      return nil, err
+    }
+  }
+  return ratings, nil
+}
+
+func genRatings(num int, pos int) []Result {
+  res := make([]Result, num - 1)
+  for i := range(res) {
+    if i >= pos {
+      res[i] = Win
+    } else {
+      res[i] = Loss
+    }
+  }
+  return res
+}
+
 func newVolatility(estVar, estImp float64, p *Rating) float64 {
 	epsilon := 0.000001
 	a := math.Log(sq(p.Volatility))

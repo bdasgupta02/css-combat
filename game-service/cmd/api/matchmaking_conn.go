@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/jwtauth"
@@ -13,25 +11,16 @@ import (
 )
 
 const (
-	timedOut = "timed out"
-	start    = "start"
-	stop     = "stop"
-	found    = "found"
+	timedOut  = "104"
+	stop      = "103"
+	found     = "102"
+	searching = "101"
 )
 
 var (
 	newline = []byte{'\n'}
 	space   = []byte{' '}
 )
-
-// FIXME: IMPORTANT: should not send "start" message
-// FIXME: ONLY TESTING make this authoratiative through sql query for low and high
-// FIXME: use algorithm to find the bracket for mmr
-// FIXME: high and low cant be below 0 in logic
-// FIXME: use channels more than direct
-// FIXME: timeout for total connection: 3 mins
-// FIXME: when client disconnects this doesnt
-// FIXME: send to channel pump instead
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -41,6 +30,7 @@ var upgrader = websocket.Upgrader{
 func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 	_, claims, _ := jwtauth.FromContext(r.Context())
 	username := claims["username"].(string)
+	userId := uint64(claims["userId"].(float64))
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -48,11 +38,13 @@ func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client := &matchClient{
-		hub:      hub,
-		username: username,
-		conn:     conn,
-		send:     make(chan []byte, 256),
-		update:   make(chan int, 16),
+		hub:        hub,
+		username:   username,
+		userId:     userId,
+		conn:       conn,
+		send:       make(chan []byte, 256),
+		update:     make(chan int, 16),
+		quitSearch: make(chan bool),
 	}
 	client.hub.register <- client
 
@@ -63,11 +55,11 @@ func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *matchClient) timeoutChecker() {
-	time.Sleep(4 * time.Minute)
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
+	time.Sleep(4 * time.Minute)
 
 	w, err := c.conn.NextWriter(websocket.TextMessage)
 	if err == nil {
@@ -76,7 +68,6 @@ func (c *matchClient) timeoutChecker() {
 	}
 }
 
-// "start" and "stop" to start or stop matchmaking
 func (c *matchClient) readPump(q *matchQueue) {
 	defer func() {
 		c.hub.unregister <- c
@@ -91,7 +82,7 @@ func (c *matchClient) readPump(q *matchQueue) {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Printf("Read error for matchmaking: %v", err)
 			}
 			break
 		}
@@ -109,34 +100,9 @@ func (c *matchClient) readPump(q *matchQueue) {
 			log.Printf("User with username: %v wants to stop matchmaking", c.username)
 			break
 		}
-
-		words := strings.Fields(msgstr)
-		if len(words) != 3 || words[0] != start {
-			log.Println("Error parsing start string")
-			break
-		}
-
-		l, err := strconv.Atoi(words[1])
-		if err != nil {
-			log.Println("Error parsing low MMR string")
-			break
-		}
-
-		h, err := strconv.Atoi(words[2])
-		if err != nil {
-			log.Println("Error parsing high MMR string")
-			break
-		}
-
-		q.data[userPos].low = l
-		q.data[userPos].high = h
 	}
 }
 
-// needs to send update every 5 seconds for alive status: "alive"
-// finally writes roomId for generated room (randomized string - check if exists in rooms in games or not): "found <id>"
-// stopped message once stopped
-// return when unregistered
 func (c *matchClient) healthPump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -150,7 +116,7 @@ func (c *matchClient) healthPump() {
 			break
 		}
 
-		w.Write([]byte("searching"))
+		w.Write([]byte(searching))
 		w.Close()
 		time.Sleep(2 * time.Second)
 	}
@@ -160,25 +126,31 @@ func (c *matchClient) matchmakingFinder(q *matchQueue) {
 	log.Printf("Started matchmaking for username: %v", c.username)
 
 	for {
-		userPos := q.findQueueItem(c)
-		if userPos == -1 {
-			break
-		} else if q.data[userPos].low == -1 || q.data[userPos].high == -1 {
-			time.Sleep(2 * time.Second)
-		} else {
-			q.c.L.Lock()
-			res := q.findMatch(&q.data[userPos])
-			if res != nil {
-				completeMatchmaking(res, q)
-				q.c.Signal()
-				q.c.L.Unlock()
-				break
-			} else {
-				q.c.Signal()
-				q.c.L.Unlock()
+		select {
+		case q := <-c.quitSearch:
+			if q {
+				log.Printf("Ended matchmaking for username: %v", c.username)
+				return
 			}
+		default:
+			userPos := q.findQueueItem(c)
+			if userPos == -1 {
+				time.Sleep(2 * time.Second)
+			} else {
+				q.c.L.Lock()
+				res := q.findMatch(&q.data[userPos])
+				if res != nil {
+					completeMatchmaking(res, q)
+					q.c.Signal()
+					q.c.L.Unlock()
+					break
+				} else {
+					q.c.Signal()
+					q.c.L.Unlock()
+				}
 
-			time.Sleep(1 * time.Second)
+				time.Sleep(1 * time.Second)
+			}
 		}
 	}
 }

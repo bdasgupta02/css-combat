@@ -34,11 +34,12 @@ func init() {
 // matchmaking room, join room with encrypted string
 func main() {
 	log.Println("Starting Game Service")
+	ctx := context.Background()
 	router := chi.NewRouter()
 
 	q := newMatchQueue()
 	m := newMatchHub(q)
-	go m.run()
+	go m.run(ctx)
 
 	router.Use(middleware.Logger)
 
@@ -79,7 +80,7 @@ func openDB(dsn string) (*pgx.Conn, error) {
 
 // TODO shift to env
 func connectToDB() *pgx.Conn {
-	dsn := "postgres://admin:password@localhost:5432/user_db"
+	dsn := "postgres://admin:password@localhost:5432/game_db"
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {

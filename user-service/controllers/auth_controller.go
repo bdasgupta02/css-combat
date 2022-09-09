@@ -29,8 +29,6 @@ func isExistingUser(ctx context.Context, db *pgx.Conn, username string, email st
 	return false
 }
 
-// TODO: Check without field checking
-
 func Register(ctx context.Context, db *pgx.Conn, req *auth.AuthRegister) (*auth.AuthToken, error) {
 	if req.Username == "" || req.Email == "" || req.FullName == "" || req.Password == "" {
 		return nil, errors.New("missing details")
