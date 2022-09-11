@@ -4,8 +4,6 @@ import (
 	"sync"
 )
 
-// FIXME: find match should find bracket links for all instead of risking a chain
-
 type matchQueueItem struct {
 	client *matchClient
 	low    float64
@@ -35,12 +33,12 @@ func (q *matchQueue) addToQ(item *matchQueueItem) {
 func (q *matchQueue) removeClientFromQ(item *matchQueueItem) {
 	var idx int
 	for i := 0; i < len(q.data); i++ {
-		if q.data[i].client.username == item.client.username {
+		if q.data[i].client.userId == item.client.userId {
 			idx = i
 		}
 	}
 
-	if idx == len(q.data) - 1  {
+	if idx == len(q.data)-1 {
 		q.data = q.data[:idx]
 	} else {
 		q.data = append(q.data[:idx], q.data[idx+1:]...)
@@ -61,7 +59,7 @@ func (q *matchQueue) findMatch(user *matchQueueItem) []*matchQueueItem {
 	var res []*matchQueueItem
 	var count int
 	for i := 0; i < len(q.data); i++ {
-		if isMatch(&q.data[i], user) && q.data[i].client.username != user.client.username {
+		if isMatch(&q.data[i], user) && q.data[i].client.userId != user.client.userId {
 			res = append(res, &q.data[i])
 			count++
 		}
@@ -76,7 +74,7 @@ func (q *matchQueue) findMatch(user *matchQueueItem) []*matchQueueItem {
 
 func (q *matchQueue) findQueueItem(c *matchClient) int {
 	for i := 0; i < len(q.data); i++ {
-		if q.data[i].client.username == c.username {
+		if q.data[i].client.userId == c.userId {
 			return i
 		}
 	}

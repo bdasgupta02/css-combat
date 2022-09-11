@@ -19,6 +19,9 @@ var tokenAuth *jwtauth.JWTAuth
 var conf serverConfig
 var connCount uint32
 
+var mHub *matchHub
+var gHub *gameHub
+
 func init() {
 	conn := connectToDB()
 	if conn == nil {
@@ -38,8 +41,10 @@ func main() {
 	router := chi.NewRouter()
 
 	q := newMatchQueue()
-	m := newMatchHub(q)
-	go m.run(ctx)
+	mHub = newMatchHub(q)
+	gHub = newGameHub()
+	go mHub.run(ctx)
+	go gHub.run(ctx)
 
 	router.Use(middleware.Logger)
 
@@ -49,15 +54,15 @@ func main() {
 		router.Use(jwtauth.Authenticator)
 
 		router.HandleFunc("/ws/match", func(w http.ResponseWriter, r *http.Request) {
-			serveMatchWS(m, w, r)
+			serveMatchWS(mHub, w, r)
 		})
 
-		router.HandleFunc("/ws/game/:id", func(w http.ResponseWriter, r *http.Request) {
-			// TODO
+		router.HandleFunc("/ws/game/{id}", func(w http.ResponseWriter, r *http.Request) {
+			serveGameWS(gHub, w, r)
 		})
 
-		router.Get("/protected", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("You're authorized!"))
+		router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("pong"))
 		})
 	})
 

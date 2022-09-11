@@ -13,7 +13,7 @@ import (
 const (
 	timedOut  = "104"
 	stop      = "103"
-	found     = "102"
+	found     = "102 "
 	searching = "101"
 )
 
@@ -29,7 +29,6 @@ var upgrader = websocket.Upgrader{
 
 func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 	_, claims, _ := jwtauth.FromContext(r.Context())
-	username := claims["username"].(string)
 	userId := uint64(claims["userId"].(float64))
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -37,15 +36,15 @@ func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+
 	client := &matchClient{
 		hub:        hub,
-		username:   username,
 		userId:     userId,
 		conn:       conn,
 		send:       make(chan []byte, 256),
-		update:     make(chan int, 16),
 		quitSearch: make(chan bool),
 	}
+
 	client.hub.register <- client
 
 	go client.healthPump()
@@ -97,7 +96,7 @@ func (c *matchClient) readPump(q *matchQueue) {
 			c.conn.Close()
 			q.c.Signal()
 			q.c.L.Unlock()
-			log.Printf("User with username: %v wants to stop matchmaking", c.username)
+			log.Printf("User with id: %v wants to stop matchmaking", c.userId)
 			break
 		}
 	}
@@ -123,13 +122,13 @@ func (c *matchClient) healthPump() {
 }
 
 func (c *matchClient) matchmakingFinder(q *matchQueue) {
-	log.Printf("Started matchmaking for username: %v", c.username)
+	log.Printf("Started matchmaking for id: %v", c.userId)
 
 	for {
 		select {
 		case q := <-c.quitSearch:
 			if q {
-				log.Printf("Ended matchmaking for username: %v", c.username)
+				log.Printf("Ended matchmaking for id: %v", c.userId)
 				return
 			}
 		default:
@@ -140,7 +139,8 @@ func (c *matchClient) matchmakingFinder(q *matchQueue) {
 				q.c.L.Lock()
 				res := q.findMatch(&q.data[userPos])
 				if res != nil {
-					completeMatchmaking(res, q)
+					l := len(res)
+					completeMatchmaking(&l, res, q)
 					q.c.Signal()
 					q.c.L.Unlock()
 					break
@@ -155,16 +155,18 @@ func (c *matchClient) matchmakingFinder(q *matchQueue) {
 	}
 }
 
-func completeMatchmaking(res []*matchQueueItem, q *matchQueue) {
+func completeMatchmaking(num *int, res []*matchQueueItem, q *matchQueue) {
+	g := createGame(num)
+
 	for i := 0; i < len(res); i++ {
 		c := res[i].client
-		log.Printf("Complete matchmaking for %v", c.username)
+		log.Printf("Complete matchmaking for User with id %v", c.userId)
 		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			break
 		}
 
-		w.Write([]byte(found + " <room>"))
+		w.Write([]byte(found + g))
 		w.Close()
 		c.hub.unregister <- c
 		c.conn.Close()

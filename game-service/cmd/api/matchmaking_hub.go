@@ -11,10 +11,8 @@ import (
 type matchClient struct {
 	hub        *matchHub
 	conn       *websocket.Conn
-	username   string
 	userId     uint64
 	send       chan []byte
-	update     chan int
 	quitSearch chan bool
 }
 
