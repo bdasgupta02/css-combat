@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package problem;
+
+option go_package = "/problem";
+
+message TypeMessage {
+  string type = 1;
+}
+
+message ImageMessage {
+  string type = 1;
+  string img = 2;
+}
+
+service Problem {
+  // unary
+  rpc GenerateProblem (TypeMessage) returns (ImageMessage);
+}

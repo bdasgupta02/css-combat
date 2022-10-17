@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/jwtauth"
@@ -15,6 +16,7 @@ const (
 	stop      = "103"
 	found     = "102 "
 	searching = "101"
+	search    = "100"
 )
 
 var (
@@ -27,14 +29,47 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// TODO change check origin condition
 func serveMatchWS(hub *matchHub, w http.ResponseWriter, r *http.Request) {
-	_, claims, _ := jwtauth.FromContext(r.Context())
-	userId := uint64(claims["userId"].(float64))
-
+	// TODO change condition
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
+	}
+
+	var userId uint64
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			conn.Close()
+			log.Printf("Error at matchmaking connection: %v", err)
+			return
+		}
+
+		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		msgstr := string(message)
+		msg_parts := strings.Split(msgstr, " ")
+		if msg_parts[0] == search {
+			token, err := jwtauth.VerifyToken(tokenAuth, msg_parts[1])
+			if err != nil {
+				conn.Close()
+				log.Printf("Error at matchmaking connection: %v", err)
+				return
+			}
+
+			userIdstr, ok := token.Get("userId")
+			if !ok {
+				conn.Close()
+				log.Printf("Error at matchmaking connection: %v", err)
+				return
+			}
+
+			userId = uint64(userIdstr.(float64))
+
+			break
+		}
 	}
 
 	client := &matchClient{
@@ -87,8 +122,8 @@ func (c *matchClient) readPump(q *matchQueue) {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		msgstr := string(message)
-		userPos := q.findQueueItem(c)
 
+		userPos := q.findQueueItem(c)
 		if msgstr == stop {
 			q.c.L.Lock()
 			q.removeClientFromQ(&q.data[userPos])

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package analytics;
+
+// V1: only acc grading with syntax
+
+message GradeRequest {
+  string html = 1;
+}
+
+message GradeResponse {
+  string acc = 1;
+}
+
+service Anlytics {
+  rpc GradeAccuracy (GradeRequest) returns (GradeResponse);
+}

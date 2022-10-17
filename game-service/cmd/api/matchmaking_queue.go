@@ -52,7 +52,7 @@ func (q *matchQueue) removeMultipleClientsFromQ(items []*matchQueueItem) {
 }
 
 func isMatch(a *matchQueueItem, b *matchQueueItem) bool {
-	return (a.low >= b.low && a.low <= b.high) || (a.high >= b.low && a.high <= b.low)
+	return (a.low >= b.low && a.low <= b.high) || (a.high >= b.low && a.high <= b.low) || (a.low >= b.low && a.high <= b.high) || (b.low >= a.low && b.high <= a.high)
 }
 
 func (q *matchQueue) findMatch(user *matchQueueItem) []*matchQueueItem {

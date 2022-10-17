@@ -37,6 +37,13 @@ type gameHub struct {
 	unregister chan *gameClient
 }
 
+type probImg struct {
+	probType string
+	probImg  string
+}
+
+var probMap map[string]probImg
+
 func newGameHub() *gameHub {
 	return &gameHub{
 		expected:   make(map[string]int),
@@ -55,6 +62,10 @@ func createGame(num *int) string {
 		if !checkGameExists(&s) {
 			gHub.games[s] = nil
 			gHub.expected[s] = *num
+
+			probT, probI := conf.GenerateProblem()
+			probMap[s] = probImg{probT, probI}
+
 			return s
 		}
 	}
@@ -67,6 +78,7 @@ func checkGameExists(g *string) bool {
 
 // for h.register check if room exists, or else dont connect and close connection for client
 func (h *gameHub) run(ctx context.Context) {
+	probMap = make(map[string]probImg)
 	for {
 		select {
 		case client := <-h.register:
@@ -107,6 +119,7 @@ func (h *gameHub) run(ctx context.Context) {
 func (h *gameHub) remove(room *string) {
 	delete(h.games, *room)
 	delete(h.expected, *room)
+	delete(probMap, *room)
 }
 
 // RNG string

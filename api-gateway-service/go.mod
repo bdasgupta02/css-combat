@@ -10,6 +10,7 @@ require (
 )
 
 require (
+	github.com/go-chi/cors v1.2.1 // indirect
 	github.com/goccy/go-json v0.3.5 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.7 // indirect

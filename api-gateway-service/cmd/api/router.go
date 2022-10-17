@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -31,6 +32,14 @@ var userC userClient
 // TODO TLS credentials
 func CreateRouter() http.Handler {
 	router := chi.NewRouter()
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	})
 
 	log.Println("Connecting to User Service via gRPC")
 	var err error
@@ -44,6 +53,7 @@ func CreateRouter() http.Handler {
 
 	log.Println("gRPC connections successful")
 	router.Use(middleware.Logger)
+	router.Use(c.Handler)
 
 	router.Group(ProtectedRoutes)
 	router.Group(PublicRoutes)
@@ -52,8 +62,8 @@ func CreateRouter() http.Handler {
 }
 
 func PublicRoutes(router chi.Router) {
-	router.Post("/auth/login", conf.LoginViaGRPC)
-	router.Post("/auth/register", conf.RegisterViaGRPC)
+	router.Post("/auth/sign-in", conf.LoginViaGRPC)
+	router.Post("/auth/sign-up", conf.RegisterViaGRPC)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("User Service is online"))

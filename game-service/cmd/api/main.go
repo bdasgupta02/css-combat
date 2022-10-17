@@ -3,14 +3,18 @@ package main
 import (
 	"context"
 	"game-service/config"
+	"game-service/proto/problem"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 	"github.com/jackc/pgx/v4"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 type serverConfig config.Config
@@ -21,6 +25,14 @@ var connCount uint32
 
 var mHub *matchHub
 var gHub *gameHub
+
+type probClient struct {
+	client problem.ProblemClient
+	ctx    context.Context
+}
+
+var probConn *grpc.ClientConn
+var probC probClient
 
 func init() {
 	conn := connectToDB()
@@ -39,6 +51,23 @@ func main() {
 	log.Println("Starting Game Service")
 	ctx := context.Background()
 	router := chi.NewRouter()
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	})
+
+	var err error
+	probConn, err = grpc.Dial("localhost:8040", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("Could not open gRPC client from Game Service to Problem Service: %v", err)
+	}
+
+	probC = probClient{client: problem.NewProblemClient(probConn)}
+	log.Println("gRPC connections successful")
 
 	q := newMatchQueue()
 	mHub = newMatchHub(q)
@@ -47,23 +76,18 @@ func main() {
 	go gHub.run(ctx)
 
 	router.Use(middleware.Logger)
+	router.Use(c.Handler)
 
-	// authenticates socket connection with JWT
-	router.Group(func(router chi.Router) {
-		router.Use(jwtauth.Verifier(tokenAuth))
-		router.Use(jwtauth.Authenticator)
+	router.HandleFunc("/ws/match", func(w http.ResponseWriter, r *http.Request) {
+		serveMatchWS(mHub, w, r)
+	})
 
-		router.HandleFunc("/ws/match", func(w http.ResponseWriter, r *http.Request) {
-			serveMatchWS(mHub, w, r)
-		})
+	router.HandleFunc("/ws/game/{id}", func(w http.ResponseWriter, r *http.Request) {
+		serveGameWS(gHub, w, r)
+	})
 
-		router.HandleFunc("/ws/game/{id}", func(w http.ResponseWriter, r *http.Request) {
-			serveGameWS(gHub, w, r)
-		})
-
-		router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("pong"))
-		})
+	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
 	})
 
 	log.Fatal(http.ListenAndServe(conf.WebPort, router))

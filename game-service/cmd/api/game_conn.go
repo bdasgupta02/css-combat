@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,7 +15,9 @@ import (
 
 /*
 TODO
+- defer close is removed
 - exit functions
+- timer for games when they're created
 
 Requirements
 - create game function with locks
@@ -35,7 +38,8 @@ writePump
 */
 
 const (
-	start      = "201"
+	connected  = "200"
+	start      = "201" // format: start <type> <img>
 	img        = "202"
 	chat       = "203"
 	wait       = "204"
@@ -54,13 +58,44 @@ func serveGameWS(hub *gameHub, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Game not found", http.StatusNotFound)
 	}
 
-	_, claims, _ := jwtauth.FromContext(r.Context())
-	userId := uint64(claims["userId"].(float64))
-
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
+	}
+
+	var userId uint64
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			conn.Close()
+			log.Printf("Error at matchmaking connection: %v", err)
+			return
+		}
+
+		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		msgstr := string(message)
+		msg_parts := strings.Split(msgstr, " ")
+		if msg_parts[0] == connected {
+			token, err := jwtauth.VerifyToken(tokenAuth, msg_parts[1])
+			if err != nil {
+				conn.Close()
+				log.Printf("Error at matchmaking connection: %v", err)
+				return
+			}
+
+			userIdstr, ok := token.Get("userId")
+			if !ok {
+				conn.Close()
+				log.Printf("Error at matchmaking connection: %v", err)
+				return
+			}
+
+			userId = uint64(userIdstr.(float64))
+
+			break
+		}
 	}
 
 	client := &gameClient{
@@ -76,27 +111,40 @@ func serveGameWS(hub *gameHub, w http.ResponseWriter, r *http.Request) {
 
 	client.hub.register <- client
 
+	log.Printf("User with id %v joined", userId)
+
 	go client.timePump()
 	go client.readPump()
 	go client.writePump()
 }
 
 // 2 stages:
-//  1. Waiting for players: 30s timeout then all are unregistered and all client funcs are closed, then TODO: send image
-//  2. Counting ticker for 30m (listen to game ending), TODO: regular second by second update with [207 time]
+//  1. Waiting for players: 30s timeout then all are unregistered and all client funcs are closed, then TODO: send message
+//  2. Counting ticker for 30m (listen to game ending)
 func (c *gameClient) timePump() {
-	defer c.conn.Close()
 
 	// Stage 1: waiting for all players
+	waitCount := 0
 	for {
 		if len(c.hub.games[c.room]) == c.hub.expected[c.room] {
-			c.hub.broadcast <- &gameMessage{start, c.room}
+			prob := probMap[c.room]
+			if err := c.conn.WriteMessage(websocket.TextMessage, []byte(start+" "+prob.probType+" "+prob.probImg)); err != nil {
+				log.Printf("User with id %v had an issue in timePump: %v", c.userId, err)
+				return
+			}
 			break
 		}
 
 		time.Sleep(gameFreq)
+
+		waitCount++
+		if waitCount >= 30 {
+			c.hub.broadcast <- &gameMessage{endTime, c.room}
+			// TODO: unregister here
+		}
 	}
 
+	// Stage 2: timer
 	ticker := time.NewTicker(gameFreqDouble)
 	done := make(chan bool)
 	go func() {
@@ -124,8 +172,6 @@ func (c *gameClient) timePump() {
 //
 // Both broadcast reply to every member
 func (c *gameClient) readPump() {
-	defer c.conn.Close()
-
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -142,6 +188,7 @@ func (c *gameClient) readPump() {
 		switch code {
 		case img:
 			// TODO: analytics server calls here
+			// TODO: endWin message if >=0.95 acc
 			c.hub.broadcast <- &gameMessage{"img update here", c.room}
 		case chat:
 			c.hub.broadcast <- &gameMessage{msgstr[4:], c.room}
@@ -151,7 +198,6 @@ func (c *gameClient) readPump() {
 
 // Broadcasting: does not discriminate or check if chat or game update
 func (c *gameClient) writePump() {
-	defer c.conn.Close()
 
 	for {
 		select {
