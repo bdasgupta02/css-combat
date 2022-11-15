@@ -1,18 +1,13 @@
 FROM golang:1.19-alpine
 
-RUN apk add --update tzdata \
-    bash wget curl git;
+WORKDIR /game-service-app
 
-RUN mkdir -p $$GOPATH/bin && \
-    curl https://glide.sh/get | sh && \
-    go get github.com/pilu/fresh
+COPY . .
 
-ENV TZ=Asia/Singapore
+RUN go mod download
 
-ADD . /go/src/game-service
-WORKDIR /go/src/game-service
+RUN go install -mod=mod github.com/githubnemo/CompileDaemon
 
-CMD glide update && fresh -c runner.conf main.go
+EXPOSE 8030
 
-# need to expose ports
-# need tern migration
+ENTRYPOINT CompileDaemon -log-prefix=false -polling -build="go build ./cmd/api/" -command="./api"

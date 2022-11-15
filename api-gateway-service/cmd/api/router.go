@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -42,10 +43,13 @@ func CreateRouter() http.Handler {
 	})
 
 	log.Println("Connecting to User Service via gRPC")
-	var err error
-	userConn, err = grpc.Dial("localhost:8020", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	if err != nil {
-		log.Fatalf("Could not open gRPC client from API Gateway to User Service: %v", err)
+	var err error = nil
+	for err != nil {
+		userConn, err = grpc.Dial("localhost:8020", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		if err != nil {
+			log.Fatalf("Could not open gRPC client from API Gateway to User Service: %v, retrying!", err)
+			time.Sleep(2 * time.Second)
+		}
 	}
 
 	authC = authClient{client: auth.NewAuthServiceClient(userConn)}
@@ -66,7 +70,7 @@ func PublicRoutes(router chi.Router) {
 	router.Post("/auth/sign-up", conf.RegisterViaGRPC)
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("User Service is online"))
+		w.Write([]byte("API Gateway is online"))
 	})
 }
 

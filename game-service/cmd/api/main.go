@@ -60,10 +60,13 @@ func main() {
 		MaxAge:           300,
 	})
 
-	var err error
-	probConn, err = grpc.Dial("localhost:8040", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	if err != nil {
-		log.Fatalf("Could not open gRPC client from Game Service to Problem Service: %v", err)
+	var err error = nil
+	for err != nil {
+		probConn, err = grpc.Dial("localhost:8040", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		if err != nil {
+			log.Fatalf("Could not open gRPC client from Game Service to Problem Service: %v", err)
+			time.Sleep(2 * time.Second)
+		}
 	}
 
 	probC = probClient{client: problem.NewProblemClient(probConn)}
@@ -109,7 +112,7 @@ func openDB(dsn string) (*pgx.Conn, error) {
 
 // TODO shift to env
 func connectToDB() *pgx.Conn {
-	dsn := "postgres://admin:password@localhost:5432/game_db"
+	dsn := "postgres://admin:password@host.docker.internal:5432/game_db"
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {

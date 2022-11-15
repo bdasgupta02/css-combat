@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  
+  
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - 8020:8020
+    volumes:
+      - ./user-service:/user-service-app
+  
+  
+  analytics-service:
+    build:
+      context: ./analytics-service
+      dockerfile: Dockerfile
+    stop_signal: SIGKILL
+    ports:
+      - 8050:8050
+    volumes:
+      - ./analytics-service:/analytics-service-app
+  
+  
+  problem-service:
+    build:
+      context: ./problem-service
+      dockerfile: Dockerfile
+    stop_signal: SIGKILL
+    ports:
+      - 8040:8040
+    volumes:
+      - ./problem-service:/problem-service-app
+  
+  
+  game-service:
+    build:
+      context: ./game-service
+      dockerfile: Dockerfile
+    ports:
+      - 8030:8030
+    volumes:
+      - ./game-service:/game-service-app
+  
+  
+  api-gateway-service:
+    build:
+      context: ./api-gateway-service
+      dockerfile: Dockerfile
+    ports:
+      - 8010:8010
+    volumes:
+      - ./api-gateway-service:/api-gateway-service-app
+  

@@ -3,6 +3,7 @@ module user-service
 go 1.19
 
 require (
+	github.com/georgysavva/scany v1.1.0
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/jackc/pgx/v4 v4.17.0
 	golang.org/x/crypto v0.0.0-20220826181053-bd7e27e6170d
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/georgysavva/scany v1.1.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect

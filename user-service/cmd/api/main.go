@@ -46,7 +46,7 @@ func openDB(dsn string) (*pgx.Conn, error) {
 
 // TODO shift to env
 func connectToDB() *pgx.Conn {
-	dsn := "postgres://admin:password@localhost:5432/user_db"
+	dsn := "postgres://admin:password@host.docker.internal:5432/user_db"
 	for {
 		connection, err := openDB(dsn)
 		if err != nil {

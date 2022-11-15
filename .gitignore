@@ -1,0 +1,8 @@
+*.yml~
+*.yml.un~
+*.un~
+*.swp
+
+
+/tmp
+/__pycache__

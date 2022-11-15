@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 grpcio = "*"
 grpcio-tools = "*"
+watchdog = {extras = ["watchmedo"], version = "*"}
 
 [dev-packages]
 autopep8 = "*"
