@@ -53,3 +53,15 @@ services:
     volumes:
       - ./api-gateway-service:/api-gateway-service-app
   
+  front-end:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - 3000:3000
+    volumes:
+      - ./front-end:/front-end-app
+      - /front-end-app/node_modules
+    

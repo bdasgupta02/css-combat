@@ -23,7 +23,7 @@ const Pages = () => {
   const location = useLocation()
 
   const inGame = location.pathname.substring(0, 6) === "/play/"
-
+  
   return (
     <AppOuter>
       {isSignedIn && !inGame && <Navbar />}
