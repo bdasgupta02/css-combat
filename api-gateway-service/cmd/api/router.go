@@ -4,6 +4,7 @@ import (
 	"api-gateway-service/proto/auth"
 	"api-gateway-service/proto/user"
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -34,6 +35,7 @@ var userC userClient
 func CreateRouter() http.Handler {
 	router := chi.NewRouter()
 	c := cors.New(cors.Options{
+		// only for dev, change allowed origins to secure later
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
@@ -43,9 +45,9 @@ func CreateRouter() http.Handler {
 	})
 
 	log.Println("Connecting to User Service via gRPC")
-	var err error = nil
+	var err error = errors.New("blank")
 	for err != nil {
-		userConn, err = grpc.Dial("localhost:8020", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		userConn, err = grpc.Dial("user-service:8020", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 		if err != nil {
 			log.Fatalf("Could not open gRPC client from API Gateway to User Service: %v, retrying!", err)
 			time.Sleep(2 * time.Second)

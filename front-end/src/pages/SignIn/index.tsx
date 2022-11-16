@@ -1,3 +1,4 @@
+import axios from 'axios'
 import React, { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useTransport } from '../../api/rest/TransportContext'
@@ -28,7 +29,7 @@ const SignIn = () => {
     identifier: '',
     password: '',
   })
-
+  
   const changeDetails = (e: any, field: string) => {
     setDetails({
       ...details,
@@ -153,6 +154,7 @@ const SignIn = () => {
           value={details.password}
           onChange={(e: any) => changeDetails(e, 'password')}
           placeholder={'Password'}
+          innerProps={{type: 'password'}}
         />
         <Button
           onClick={signIn}

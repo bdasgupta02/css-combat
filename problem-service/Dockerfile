@@ -1,24 +1,13 @@
-FROM python:3.9-slim
+FROM python:3.9.7
 
-WORKDIR /problem-service
+ENV PYTHONUNBUFFERED 1
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+WORKDIR /problem-service-app
 
-COPY . .
+COPY ./requirements.txt .
 
-RUN python -m pip install --upgrade pip
-
-RUN apt-get update && apt-get install -y --no-install-recommends gcc
-
-RUN pip install pipenv && pipenv install --dev --system --deploy
-
-RUN pipenv install
-
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /problem-service
-
-USER appuser
+RUN pip install -r requirements.txt
 
 EXPOSE 8040
 
-CMD ["python", "server.py"]
+CMD []

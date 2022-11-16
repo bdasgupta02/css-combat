@@ -10,17 +10,26 @@ services:
       - 8020:8020
     volumes:
       - ./user-service:/user-service-app
+    networks:
+      default:
+        aliases:
+          - user
   
   
   analytics-service:
     build:
       context: ./analytics-service
       dockerfile: Dockerfile
+    command: python3 server.py
     stop_signal: SIGKILL
     ports:
       - 8050:8050
     volumes:
       - ./analytics-service:/analytics-service-app
+    networks:
+      default:
+        aliases:
+          - analytics
   
   
   problem-service:
@@ -28,10 +37,15 @@ services:
       context: ./problem-service
       dockerfile: Dockerfile
     stop_signal: SIGKILL
+    command: python3 server.py
     ports:
       - 8040:8040
     volumes:
       - ./problem-service:/problem-service-app
+    networks:
+      default:
+        aliases:
+          - problem
   
   
   game-service:
@@ -42,6 +56,13 @@ services:
       - 8030:8030
     volumes:
       - ./game-service:/game-service-app
+    networks:
+      default:
+        aliases:
+          - game
+    depends_on:
+      - problem-service
+      - analytics-service
   
   
   api-gateway-service:
@@ -52,6 +73,13 @@ services:
       - 8010:8010
     volumes:
       - ./api-gateway-service:/api-gateway-service-app
+    networks:
+      default:
+        aliases:
+          - api
+    depends_on:
+      - user-service
+  
   
   front-end:
     build:

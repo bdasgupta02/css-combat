@@ -22,7 +22,7 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     problem_pb2_grpc.add_ProblemServicer_to_server(ProblemServicer(), server)
     print("Starting Problem Service at :8040")
-    server.add_insecure_port("localhost:8040")
+    server.add_insecure_port("[::]:8040")
     server.start()
     server.wait_for_termination()
 
