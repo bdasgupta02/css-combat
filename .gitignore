@@ -2,6 +2,7 @@
 *.yml.un~
 *.un~
 *.swp
+*.pyc
 
 
 /tmp
