@@ -49,7 +49,7 @@ func CreateRouter() http.Handler {
 	for err != nil {
 		userConn, err = grpc.Dial("user-service:8020", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 		if err != nil {
-			log.Fatalf("Could not open gRPC client from API Gateway to User Service: %v, retrying!", err)
+			log.Printf("Could not open gRPC client from API Gateway to User Service: %v, retrying!", err)
 			time.Sleep(2 * time.Second)
 		}
 	}

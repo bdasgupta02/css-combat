@@ -65,7 +65,7 @@ func main() {
 	for err != nil {
 		probConn, err = grpc.Dial("problem:8040", grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 		if err != nil {
-			log.Fatalf("Could not open gRPC client from Game Service to Problem Service: %v", err)
+			log.Printf("Could not open gRPC client from Game Service to Problem Service: %v", err)
 			time.Sleep(2 * time.Second)
 		}
 	}
